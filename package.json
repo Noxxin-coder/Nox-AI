@@ -1,0 +1,55 @@
+{
+  "name": "nox-ai",
+  "displayName": "Nox AI",
+  "description": "Local-first AI chat application with a shared CLI and VS Code workspace integration",
+  "version": "0.1.0",
+  "publisher": "noxxin-coder",
+  "license": "MIT",
+  "bin": {
+    "nox": "./dist/src/cli.js"
+  },
+  "engines": {
+    "node": ">=20",
+    "vscode": "^1.90.0"
+  },
+  "main": "./dist/src/extension.js",
+  "activationEvents": [
+    "onCommand:noxAi.explain",
+    "onCommand:noxAi.validateWorkspace",
+    "onCommand:noxAi.chat"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "noxAi.explain",
+        "title": "Nox AI: Explain Workspace"
+      },
+      {
+        "command": "noxAi.chat",
+        "title": "Nox AI: Chat"
+      },
+      {
+        "command": "noxAi.validateWorkspace",
+        "title": "Nox AI: Validate Workspace"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-web.cjs",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "nox": "node dist/src/cli.js",
+    "start": "node dist/src/cli.js start",
+    "stop": "node dist/src/cli.js stop",
+    "status": "node dist/src/cli.js status",
+    "dev": "npm run build && node dist/src/cli.js start",
+    "clean": "rimraf dist coverage"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/vscode": "^1.95.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.6.3",
+    "vitest": "^5.0.3"
+  }
+}

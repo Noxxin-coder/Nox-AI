@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111318">
+  <title>Nox AI</title>
+  <style>
+    :root{color-scheme:dark;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;background:#111318;color:#e8eaf0;--panel:#191c23;--line:#292d37;--muted:#9ba2b1;--accent:#a99bff}
+    *{box-sizing:border-box}body{margin:0;height:100dvh;display:flex;overflow:hidden}button,textarea,input,select{font:inherit;color:inherit}button{cursor:pointer}
+    .sidebar{width:280px;background:#15171d;border-right:1px solid var(--line);display:flex;flex-direction:column;padding:22px 14px;gap:14px}.brand{display:flex;align-items:center;gap:10px;font-weight:650;font-size:18px;padding:0 8px 12px}.mark{width:28px;height:28px;border-radius:9px;background:linear-gradient(145deg,#b7aaff,#7364d5);display:grid;place-items:center;color:#15131f;font-weight:800}
+    .button{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:10px 12px;text-align:left}.button:hover{border-color:#555b69}.primary{background:#8979ed;color:white;border:0;text-align:center;font-weight:600}.conversations{overflow:auto;display:flex;flex-direction:column;gap:4px}.conversation-row{display:flex;align-items:center}.conversation{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0;background:transparent;color:var(--muted);padding:9px 10px;border-radius:7px;text-align:left}.conversation:hover,.conversation.active{background:#242730;color:#f1f0f8}.delete-conversation{border:0;background:transparent;color:var(--muted);padding:6px;border-radius:6px}.delete-conversation:hover{color:#ffaaa5;background:#302226}.sidebar-foot{margin-top:auto;color:var(--muted);font-size:12px;padding:8px}
+    main{min-width:0;flex:1;display:flex;flex-direction:column}.topbar{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 26px}.model-status{font-size:13px;color:var(--muted)}.top-actions{display:flex;gap:8px}.icon-button{background:transparent;border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+    .messages{flex:1;overflow:auto;padding:28px max(24px,calc((100% - 800px)/2));}.welcome{max-width:680px;margin:12vh auto 0;text-align:center}.welcome h1{font-size:32px;letter-spacing:-.04em;margin-bottom:8px}.welcome p{color:var(--muted)}.message{max-width:800px;margin:0 auto 24px;overflow-wrap:anywhere}.message.user{white-space:pre-wrap;background:#1b1e26;border:1px solid var(--line);padding:14px 16px;border-radius:14px}.message-label{font-size:12px;color:var(--muted);margin-bottom:6px}.message pre{position:relative;background:#0b0d11;padding:14px;border:1px solid var(--line);border-radius:10px;overflow:auto;white-space:pre}.message code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.92em}.copy-code{float:right;border:1px solid var(--line);border-radius:6px;background:#191c23;color:var(--muted);padding:3px 8px;font-size:12px}.composer-wrap{padding:10px 24px 20px}.composer{max-width:800px;margin:auto;background:#1a1d24;border:1px solid #343946;border-radius:14px;padding:12px;display:flex;gap:10px;align-items:flex-end}.composer textarea{background:transparent;border:0;outline:0;resize:none;flex:1;max-height:180px;padding:4px}.send{border:0;border-radius:9px;padding:8px 13px;background:#8979ed;color:white}.send:disabled{opacity:.5;cursor:default}
+    .notice{max-width:800px;margin:0 auto 14px;padding:10px 12px;border-radius:9px;background:#30261c;color:#f0c98e;font-size:13px}.modal-backdrop{position:fixed;inset:0;background:#0009;display:grid;place-items:center;padding:20px}.modal{width:min(520px,100%);max-height:90dvh;overflow:auto;background:#191c23;border:1px solid var(--line);border-radius:14px;padding:22px}.modal h2{margin-top:0}.field{display:flex;flex-direction:column;gap:6px;margin:14px 0;color:var(--muted);font-size:13px}.field input,.field select{background:#111318;border:1px solid #343946;border-radius:8px;padding:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.setup-guide{border:1px solid var(--line);border-radius:9px;padding:12px;color:var(--muted);font-size:13px}.setup-guide p{margin:5px 0}.setup-guide a{color:var(--accent)}.setup-guide code{color:#e8eaf0}.field-row{display:flex;gap:8px;align-items:center}.field-row input{min-width:0;flex:1}.secondary-button{border:1px solid var(--line);border-radius:8px;background:#22252d;padding:9px}.verify-result{font-size:13px;color:#a8e6bf;white-space:pre-wrap}.hidden{display:none!important}.mobile-brand{display:none}
+    @media(max-width:680px){.sidebar{width:64px;padding:16px 8px}.brand{padding:0 8px}.brand-name,.sidebar .primary span,.conversation,.sidebar-foot{display:none}.sidebar .primary{font-size:0;text-align:center;padding:10px}.sidebar .primary:after{content:"+";font-size:19px}.topbar{padding:0 14px}.messages{padding:20px 14px}.composer-wrap{padding:8px 12px 14px}.welcome{margin-top:10vh}.welcome h1{font-size:26px}}
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span class="mark">N</span><span class="brand-name">Nox AI</span></div>
+    <button class="button primary" id="new-chat"><span>＋ &nbsp;New chat</span></button>
+    <div class="conversations" id="conversations" aria-label="Conversation history"></div>
+    <div class="sidebar-foot">Private by default · runs on this computer</div>
+  </aside>
+  <main>
+    <header class="topbar"><div class="model-status" id="model-status">Connecting to local backend…</div><div class="top-actions"><button class="icon-button" id="settings">Settings</button></div></header>
+    <section class="messages" id="messages" aria-live="polite"></section>
+    <div id="notice" class="notice hidden" role="status"></div>
+    <div class="composer-wrap"><form class="composer" id="composer"><textarea id="prompt" rows="1" aria-label="Message Nox AI" placeholder="Message Nox AI…" required></textarea><button class="send" id="send" type="submit">Send</button><button class="send hidden" id="stop" type="button">Stop</button></form></div>
+  </main>
+  <div class="modal-backdrop hidden" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <form class="modal" id="settings-form"><h2 id="settings-title">Model settings</h2><p class="model-status">Connect a compatible local OpenAI-style model server. Remote endpoints require explicit opt-in.</p>
+      <label class="field">Provider<select id="provider"><option value="ollama">Ollama</option><option value="lmstudio">LM Studio</option><option value="llamacpp">llama.cpp</option><option value="custom">Other OpenAI-compatible</option></select></label>
+      <label class="field">Endpoint<input id="base-url" type="url" required placeholder="http://127.0.0.1:11434"></label>
+      <label class="field">Model<div class="field-row"><input id="model" list="available-models" required maxlength="200" placeholder="Installed model identifier"><datalist id="available-models"></datalist><button class="secondary-button" type="button" id="discover-models">Discover</button></div></label>
+      <button class="secondary-button" type="button" id="verify-model">Verify connection and model</button>
+      <p class="verify-result hidden" id="verify-result" role="status"></p>
+      <details class="setup-guide"><summary>First-time local setup</summary>
+        <p><strong>Ollama (recommended):</strong> <a href="https://ollama.com/download/windows" target="_blank" rel="noopener noreferrer">download Ollama for Windows</a>, open the app, and allow it to finish setup.</p>
+        <p>In PowerShell, explicitly download a model you choose with <code>ollama pull &lt;model-name&gt;</code>, then list installed models with <code>ollama list</code>. Nox never downloads model weights for you.</p>
+        <p>Use provider <strong>Ollama</strong>, endpoint <code>http://127.0.0.1:11434</code>, and select the exact installed model name returned by Discover.</p>
+        <p><strong>LM Studio:</strong> <a href="https://lmstudio.ai/download" target="_blank" rel="noopener noreferrer">install LM Studio</a>, download/load a model in the app, then open Developer and start its local server. Default endpoint: <code>http://127.0.0.1:1234/v1</code>. Use Discover for its model ID.</p>
+        <p><strong>llama.cpp:</strong> start a compatible local server bound to <code>127.0.0.1</code>; see the <a href="https://github.com/ggml-org/llama.cpp/tree/master/tools/server" target="_blank" rel="noopener noreferrer">official server documentation</a> for build and model requirements.</p>
+        <p>For remote endpoints, Nox requires the explicit opt-in below. Local models need no cloud account.</p>
+      </details>
+      <label class="field"><span><input id="remote-opt-in" type="checkbox"> I explicitly allow sending prompts to this remote endpoint</span></label>
+      <div class="modal-actions"><button class="icon-button" type="button" id="cancel-settings">Cancel</button><button class="send" type="submit">Save settings</button></div>
+    </form>
+  </div>
+  <script>
+    const token = "__NOX_TOKEN__";
+    const api = async (path, options = {}) => {
+      const response = await fetch(path, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(options.body ? { "Content-Type": "application/json" } : {}),
+          ...options.headers,
+        },
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({ error: { message: response.statusText } }));
+        throw new Error(data.error?.message || `Request failed (${response.status})`);
+      }
+      return response;
+    };
+
+    const messagesEl = document.querySelector("#messages");
+    const listEl = document.querySelector("#conversations");
+    const notice = document.querySelector("#notice");
+    let activeId = null;
+    let config = null;
+    let controller = null;
+
+    function showError(message, setup = false) {
+      notice.replaceChildren(document.createTextNode(message));
+      if (setup) {
+        const button = document.createElement("button");
+        button.className = "secondary-button";
+        button.type = "button";
+        button.textContent = "Set up local model";
+        button.style.marginLeft = "10px";
+        button.onclick = () => document.querySelector("#settings").click();
+        notice.append(button);
+      }
+      notice.classList.remove("hidden");
+    }
+
+    function appendInline(parent, text) {
+      const pattern = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\(https?:\/\/[^)]+\))/g;
+      let offset = 0;
+      for (const match of text.matchAll(pattern)) {
+        parent.append(document.createTextNode(text.slice(offset, match.index)));
+        const token = match[0];
+        let element;
+        if (token.startsWith("`")) {
+          element = document.createElement("code");
+          element.textContent = token.slice(1, -1);
+        } else if (token.startsWith("**")) {
+          element = document.createElement("strong");
+          element.textContent = token.slice(2, -2);
+        } else if (token.startsWith("*")) {
+          element = document.createElement("em");
+          element.textContent = token.slice(1, -1);
+        } else {
+          const parts = token.match(/^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/);
+          const link = document.createElement("a");
+          link.textContent = parts[1];
+          link.href = parts[2];
+          link.rel = "noopener noreferrer";
+          link.target = "_blank";
+          element = link;
+        }
+        parent.append(element);
+        offset = match.index + token.length;
+      }
+      parent.append(document.createTextNode(text.slice(offset)));
+    }
+
+    function renderMarkdown(container, text) {
+      const lines = text.split("\n");
+      let paragraph = [];
+      let codeLines = null;
+      const flushParagraph = () => {
+        if (!paragraph.length) return;
+        const node = document.createElement("p");
+        paragraph.forEach((line, index) => {
+          if (index) node.append(document.createElement("br"));
+          appendInline(node, line);
+        });
+        container.append(node);
+        paragraph = [];
+      };
+      for (const line of lines) {
+        if (line.startsWith("```")) {
+          if (codeLines === null) {
+            flushParagraph();
+            codeLines = [];
+          } else {
+            const pre = document.createElement("pre");
+            const copy = document.createElement("button");
+            copy.className = "copy-code";
+            copy.type = "button";
+            copy.textContent = "Copy";
+            const code = document.createElement("code");
+            code.textContent = codeLines.join("\n");
+            copy.onclick = async () => {
+              try {
+                await navigator.clipboard.writeText(code.textContent);
+                copy.textContent = "Copied";
+                setTimeout(() => { copy.textContent = "Copy"; }, 1200);
+              } catch {
+                showError("Could not copy code to the clipboard.");
+              }
+            };
+            pre.append(copy, code);
+            container.append(pre);
+            codeLines = null;
+          }
+        } else if (codeLines !== null) {
+          codeLines.push(line);
+        } else if (!line.trim()) {
+          flushParagraph();
+        } else {
+          const heading = line.match(/^(#{1,3})\s+(.+)$/);
+          const bullet = line.match(/^\s*[-*]\s+(.+)$/);
+          if (heading) {
+            flushParagraph();
+            const node = document.createElement(`h${heading[1].length + 1}`);
+            appendInline(node, heading[2]);
+            container.append(node);
+          } else if (bullet) {
+            flushParagraph();
+            const node = document.createElement("p");
+            node.className = "list-item";
+            node.textContent = "• ";
+            appendInline(node, bullet[1]);
+            container.append(node);
+          } else {
+            paragraph.push(line);
+          }
+        }
+      }
+      if (codeLines !== null) {
+        const pre = document.createElement("pre");
+        const code = document.createElement("code");
+        code.textContent = codeLines.join("\n");
+        pre.append(code);
+        container.append(pre);
+      }
+      flushParagraph();
+    }
+
+    function renderMessages(items) {
+      messagesEl.replaceChildren();
+      if (!items.length) {
+        const welcome = document.createElement("div");
+        welcome.className = "welcome";
+        welcome.innerHTML = '<span class="mark">N</span><h1>Your AI, on your machine.</h1><p>Choose a local model in settings, then start a private conversation.</p>';
+        messagesEl.append(welcome);
+        return;
+      }
+      for (const item of items) {
+        const card = document.createElement("article");
+        card.className = `message ${item.role}`;
+        const label = document.createElement("div");
+        label.className = "message-label";
+        label.textContent = item.role === "user" ? "You" : "Nox AI";
+        const body = document.createElement("div");
+        if (item.role === "assistant") renderMarkdown(body, item.content);
+        else body.textContent = item.content;
+        card.append(label, body);
+        messagesEl.append(card);
+      }
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    async function refreshList() {
+      const data = await (await api("/api/conversations")).json();
+      listEl.replaceChildren();
+      for (const item of data.conversations) {
+        const row = document.createElement("div");
+        row.className = "conversation-row";
+        const button = document.createElement("button");
+        button.className = `conversation ${item.id === activeId ? "active" : ""}`;
+        button.textContent = item.title;
+        button.title = item.title;
+        button.onclick = () => loadConversation(item.id).catch(error => showError(error.message));
+        const remove = document.createElement("button");
+        remove.className = "delete-conversation";
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", `Delete ${item.title}`);
+        remove.onclick = async () => {
+          try {
+            await api(`/api/conversations/${encodeURIComponent(item.id)}`, { method: "DELETE" });
+            if (activeId === item.id) {
+              activeId = null;
+              renderMessages([]);
+            }
+            await refreshList();
+          } catch (error) {
+            showError(error.message);
+          }
+        };
+        row.append(button, remove);
+        listEl.append(row);
+      }
+    }
+
+    async function loadConversation(id) {
+      activeId = id;
+      const data = await (await api(`/api/conversations/${encodeURIComponent(id)}`)).json();
+      renderMessages(data.conversation.messages);
+      await refreshList();
+    }
+
+    async function newConversation() {
+      const data = await (await api("/api/conversations", { method: "POST", body: "{}" })).json();
+      activeId = data.conversation.id;
+      renderMessages([]);
+      await refreshList();
+      document.querySelector("#prompt").focus();
+    }
+
+    function currentSettings() {
+      return {
+        provider: document.querySelector("#provider").value,
+        baseUrl: document.querySelector("#base-url").value,
+        model: document.querySelector("#model").value,
+        remoteAllowed: document.querySelector("#remote-opt-in").checked,
+      };
+    }
+
+    async function saveSettings() {
+      const response = await api("/api/settings", { method: "PUT", body: JSON.stringify(currentSettings()) });
+      config = (await response.json()).config;
+      return config;
+    }
+
+    async function showDiscoveredModels() {
+      await saveSettings();
+      const response = await (await api("/api/models")).json();
+      const options = document.querySelector("#available-models");
+      options.replaceChildren();
+      for (const modelName of response.models) {
+        const option = document.createElement("option");
+        option.value = modelName;
+        options.append(option);
+      }
+      const result = document.querySelector("#verify-result");
+      result.textContent = response.models.length
+        ? `Found ${response.models.length} model(s). Select a model ID above.`
+        : "Provider is reachable but has no installed models.";
+      result.classList.remove("hidden");
+    }
+
+    async function refreshStatus() {
+      try {
+        const data = await (await api("/api/status")).json();
+        config = data.config;
+        document.querySelector("#model-status").textContent =
+          `${data.provider.connected ? "●" : "○"} ${data.config.provider} · ${data.config.model} · ${data.provider.connected ? "Connected" : "Not connected"}`;
+        if (!data.provider.connected) {
+          showError(`${data.provider.error?.message || "Model provider is unavailable."}`, true);
+        } else if (data.provider.models.length && !data.provider.models.includes(data.config.model)) {
+          showError(`Configured model “${data.config.model}” was not reported by the provider. Choose an installed model in settings.`);
+        } else {
+          notice.classList.add("hidden");
+        }
+      } catch (error) {
+        document.querySelector("#model-status").textContent = "Backend unavailable";
+        showError(error.message);
+      }
+    }
+
+    document.querySelector("#new-chat").onclick = () => newConversation().catch(error => showError(error.message));
+    document.querySelector("#composer").onsubmit = async event => {
+      event.preventDefault();
+      const input = document.querySelector("#prompt");
+      const text = input.value.trim();
+      if (!text) return;
+      if (!activeId) await newConversation();
+      input.value = "";
+      input.disabled = true;
+      document.querySelector("#send").classList.add("hidden");
+      document.querySelector("#stop").classList.remove("hidden");
+      controller = new AbortController();
+      const history = (await (await api(`/api/conversations/${encodeURIComponent(activeId)}`)).json()).conversation.messages;
+      const user = { role: "user", content: text };
+      let assistantBody = null;
+      let assistantContent = "";
+      renderMessages([...history, user]);
+      try {
+        const response = await api("/api/chat", {
+          method: "POST",
+          body: JSON.stringify({ conversationId: activeId, message: text }),
+          signal: controller.signal,
+        });
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const events = buffer.split("\n\n");
+          buffer = events.pop() || "";
+          for (const event of events) {
+            const line = event.split("\n").find(part => part.startsWith("data: "));
+            if (!line) continue;
+            const data = JSON.parse(line.slice(6));
+            if (data.error) throw new Error(data.error.message || data.error);
+            if (data.token) {
+              if (!assistantBody) {
+                const card = document.createElement("article");
+                card.className = "message assistant";
+                const label = document.createElement("div");
+                label.className = "message-label";
+                label.textContent = "Nox AI";
+                assistantBody = document.createElement("div");
+                card.append(label, assistantBody);
+                messagesEl.append(card);
+              }
+              assistantContent += data.token;
+              assistantBody.textContent = assistantContent;
+              messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+          }
+        }
+        await loadConversation(activeId);
+        await refreshStatus();
+      } catch (error) {
+        if (error.name !== "AbortError") showError(error.message);
+        await loadConversation(activeId).catch(() => {});
+      } finally {
+        input.disabled = false;
+        document.querySelector("#send").classList.remove("hidden");
+        document.querySelector("#stop").classList.add("hidden");
+        controller = null;
+        input.focus();
+        await refreshList();
+      }
+    };
+
+    document.querySelector("#stop").onclick = () => controller?.abort();
+    const modal = document.querySelector("#settings-modal");
+    document.querySelector("#settings").onclick = async () => {
+      if (!config) await refreshStatus();
+      document.querySelector("#provider").value = config?.provider || "ollama";
+      document.querySelector("#base-url").value = config?.baseUrl || "http://127.0.0.1:11434";
+      document.querySelector("#model").value = config?.model || "llama3.1";
+      document.querySelector("#remote-opt-in").checked = config?.remoteAllowed || false;
+      modal.classList.remove("hidden");
+    };
+    document.querySelector("#cancel-settings").onclick = () => modal.classList.add("hidden");
+    document.querySelector("#discover-models").onclick = async () => {
+      const result = document.querySelector("#verify-result");
+      result.textContent = "Checking provider and discovering installed models…";
+      result.classList.remove("hidden");
+      try {
+        await showDiscoveredModels();
+      } catch (error) {
+        result.textContent = error.message;
+      }
+    };
+    document.querySelector("#verify-model").onclick = async () => {
+      const result = document.querySelector("#verify-result");
+      result.textContent = "Sending a short test prompt to the selected model…";
+      result.classList.remove("hidden");
+      try {
+        await saveSettings();
+        const response = await (await api("/api/verify", { method: "POST" })).json();
+        const options = document.querySelector("#available-models");
+        options.replaceChildren();
+        for (const modelName of response.models) {
+          const option = document.createElement("option");
+          option.value = modelName;
+          options.append(option);
+        }
+        result.textContent = `Verified ${response.provider} · ${response.model}\nModel response: ${response.response}`;
+      } catch (error) {
+        result.textContent = error.message;
+      }
+    };
+    document.querySelector("#settings-form").onsubmit = async event => {
+      event.preventDefault();
+      try {
+        await saveSettings();
+        modal.classList.add("hidden");
+        await refreshStatus();
+      } catch (error) {
+        showError(error.message);
+      }
+    };
+    document.querySelector("#prompt").onkeydown = event => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        document.querySelector("#composer").requestSubmit();
+      }
+    };
+    (async () => {
+      await refreshStatus();
+      await refreshList();
+      const conversations = await (await api("/api/conversations")).json();
+      if (conversations.conversations.length) await loadConversation(conversations.conversations[0].id);
+      else await newConversation();
+    })().catch(error => showError(error.message));
+  </script>
+</body>
+</html>
